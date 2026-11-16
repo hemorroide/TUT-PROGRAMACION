@@ -1,3 +1,11 @@
+# Ejercicio 8 - Leer las mediciones que quedaron guardadas
+
+from datetime import datetime
+from importlib import import_module
+
+a_numero = import_module("02_magnitudes").a_numero
+
+
 def analizar_linea(linea):
     linea_str = linea.strip()
     
@@ -25,16 +33,15 @@ def analizar_linea(linea):
     except ValueError:
         return None, "Hora no numérica"
         
-    # Validar canal y magnitud
+    # Validar canal y magnitud (incluyendo variantes de CYCRMS)
     if canal not in ["CH1", "CH2"]:
         return None, "Canal inválido"
-    if magnitud not in ["FREQ", "PKPK", "CYCRms"]:
+    if magnitud not in ["FREQ", "PKPK", "CYCRMS", "CYCRms"]:
         return None, "Magnitud inválida"
         
-    # Validar valor numérico
-    try:
-        valor = float(val_str)
-    except ValueError:
+    # Validar valor numérico usando a_numero
+    valor = a_numero(val_str)
+    if valor is None:
         return None, "Valor no numérico"
         
     medicion = {
@@ -42,11 +49,37 @@ def analizar_linea(linea):
         "hora": hora,
         "equipo": equipo,
         "canal": canal,
-        "magnitud": magnitud,
+        "magnitud": magnitud.upper(),
         "valor": valor
     }
     
     return medicion, None
+
+
+def leer_log(ruta):
+    """Lee un archivo de log línea por línea, agrupa las series y lista las rechazadas."""
+    series = {}
+    rechazadas = []
+
+    with open(ruta, "r", encoding="utf-8") as archivo:
+        for numero, linea in enumerate(archivo, 1):
+            medicion, motivo = analizar_linea(linea)
+
+            if medicion is not None:
+                clave = (medicion["equipo"], medicion["canal"], medicion["magnitud"])
+                if clave not in series:
+                    series[clave] = []
+                series[clave].append(medicion["valor"])
+
+            elif motivo is not None:
+                rechazadas.append({
+                    "linea": numero,
+                    "motivo": motivo,
+                    "texto": linea.rstrip("\n")
+                })
+
+    return series, rechazadas
+
 
 # --- Pruebas del Ejercicio 8 ---
 if __name__ == "__main__":
