@@ -1,4 +1,5 @@
 import importlib
+import math
 import os
 
 # --- IMPORTACIÓN DINÁMICA DE LOS MÓDULOS 01 AL 09 ---
@@ -45,7 +46,13 @@ def armar_informe(equipos_idn, series, verificaciones):
     if isinstance(series, dict) and series:
         for clave, valores in sorted(series.items()):
             equipo, canal, magnitud = clave
-            datos = mod_09.resumen(valores)
+            
+            # Filtro de seguridad para limpiar valores nulos o no finitos (NaN)
+            valores_limpios = [v for v in valores if isinstance(v, (int, float)) and math.isfinite(v)]
+            if not valores_limpios:
+                continue
+
+            datos = mod_09.resumen(valores_limpios)
             if datos is None:
                 continue
 
